@@ -1,0 +1,167 @@
+- name: Set up local environment
+  hosts: localhost
+  connection: local
+  become: yes
+  become_user: root
+  become_method: sudo
+  tasks:
+
+    # Install OpenJDK
+    - name: Install OpenJDK 9
+      apt:
+        name: openjdk-9-jdk
+        state: latest
+        install_recommends: no
+        update_cache: yes
+    - name: Confirm java is installed
+      command: java -version
+      register: java_result
+      ignore_errors: yes
+    - debug:
+         msg: "Java installation failed"
+      when: java_result is failed
+    - debug:
+         msg: "Java installation succeeded. Version: {{ java_result.stdout_lines }}"
+      when: java_result is success
+
+    # Install Maven
+    - name: Update system package cache and Install Maven
+      apt:
+        name: maven
+        state: latest
+        install_recommends: no
+        update_cache: yes
+    - name: Confirm Maven is installed
+      command: mvn --version
+      register: maven_result
+      ignore_errors: yes
+    - debug:
+         msg: "Maven installation failed"
+      when: maven_result is failed
+    - debug:
+         msg: "Maven installation succeeded. Version: {{ maven_result.stdout_lines }}"
+      when: maven_result is success
+
+    # Install Docker
+    - name: Install Docker prerequesite packages
+      apt:
+        name: "{{ docker_packages }}"
+        update_cache: yes
+      vars:
+        docker_packages:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - software-properties-common
+    - name: Add GPG Key for Docker repository to local system
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+    - name: Add Docker repository
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable
+        state: present
+        update_cache: yes
+    - name: Install Docker
+      apt:
+        name: docker-ce
+        state: latest
+        install_recommends: no
+        update_cache: yes
+        
+    # Install .NET Core SDK
+    - name: Register the Microsoft key, register the Microsoft Product Repository
+      get_url:
+        url: https://packages.microsoft.com/config/ubuntu/19.10/packages-microsoft-prod.deb
+        dest: /var/cache/apt/archives
+      register: microsoft_key_repo
+      retries: 3
+      until: microsoft_key_repo is success
+    - name: Install Microsoft Product Repository package
+      apt:
+        deb: /var/cache/apt/archives/packages-microsoft-prod.deb
+    - name: Install DotNet SDK
+      apt:
+        name: dotnet-sdk-3.1
+        install_recommends: yes
+        update_cache: yes
+    - name: Confirm .NET Core SDK is installed
+      command: dotnet --list-sdks
+      register: dotnet_result
+      ignore_errors: yes
+    - debug:
+         msg: "DotNet installation failed"
+      when: dotnet_result is failed
+    - debug:
+         msg: "DotNet installation succeeded. Version: {{ dotnet_result.stdout_lines }}"
+      when: dotnet_result is success
+
+    # Install ASP.NET Core Runtime
+    - name: Install ASP.NET Core Runtime
+      apt:
+        name: aspnetcore-runtime-3.1
+        install_recommends: yes
+        update_cache: yes
+
+    # Instasll .NET Core Runtime
+    - name: Install .NET Core Runtime
+      apt:
+        name: dotnet-runtime-3.1
+        install_recommends: yes
+        update_cache: yes
+        
+    # Install Python
+    - name: Install Python development environment packages
+      apt:
+        name: "{{ python_packages }}"
+        update_cache: yes
+      vars:
+        python_packages:
+        - python3-pip
+        - build-essential
+        - libssl-dev
+        - libffi-dev
+        - python3-dev
+        - python3-venv
+
+    # Install Notepad++
+    - name: Install Notepad++
+      snap:
+        name: notepad-plus-plus
+        classic: yes
+
+    # Install Postman
+    - name: Install Postman
+      snap:
+        name: postman
+
+    # Install PuTTY SSH Client
+    - name: Install PuTTY SSH Client
+      apt:
+        name: putty
+        state: latest
+        update_cache: yes
+
+    # Install Remmina Remote Desktop Client
+    - name: Install Remmina Remote Desktop Client
+      snap:
+        name: remmina
+        classic: yes
+
+    # Install IntelliJ
+    - name: Install IntelliJ IDEA Community
+      snap:
+        name: intellij-idea-community
+        classic: yes
+
+    # Install Microsoft Visual Studio Code
+    - name: Install Microsoft Visual Studio Code
+      snap:
+        name: code
+        classic: yes
+
+    # Install pgAdminIII
+    - name: Install pgAdminIII
+      apt:
+        name: pgadmin3
+        state: latest
+        update_cache: yes
