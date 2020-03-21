@@ -3,8 +3,8 @@
 ## Table of contents
 * [Overview](#overview)
 * [Prerequisites](#prerequisites)
-	** [Installing Git](#installing-git)
-	** [Installing Ansible](#installing-ansible)
+	* [Installing Git](#installing-git)
+	* [Installing Ansible](#installing-ansible)
 * [Running the Playbook](#running-the-playbook)
 
 ## Overview
