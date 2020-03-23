@@ -7,9 +7,9 @@
   tasks:
 
     # Install OpenJDK
-    - name: Install OpenJDK 9
+    - name: Install OpenJDK 11
       apt:
-        name: openjdk-9-jdk
+        name: openjdk-11-jdk
         state: latest
         install_recommends: no
         update_cache: yes
@@ -126,11 +126,11 @@
     # Install Node.JS
     - name: Download Node.js setup script
       get_url:
-        url: https://deb.nodesource.com/setup
+        url: https://deb.nodesource.com/setup_12.x
         dest: /opt
         mode: 755
     - name: Setup Node.js
-      command: /opt/setup
+      command: /opt/setup_12.x
     - name: Install Node.js (JavaScript run-time environment)
       apt:
         name: nodejs
@@ -159,7 +159,7 @@
     # Install Angular CLI
     - name: Install Angular CLI
       npm:
-        name: @angular/cli
+        name: "@angular/cli"
         global: yes
         state: latest
     - name: Confirm Angular CLI is installed

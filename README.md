@@ -12,7 +12,7 @@
 This project contains an Ansible playbook to set up a local development environment on an Ubuntu 19.10 machine. 
 Running this playbook will install the following:
 
-* OpenJDK9
+* OpenJDK11
 * Maven (latest)
 * Curl
 * Docker (latest)
@@ -20,7 +20,7 @@ Running this playbook will install the following:
 * ASP .NET Core Runtime 3.1
 * .NET Core Runtime 3.1
 * Python development environment packages
-* NodeJS
+* NodeJS 12.x
 * Angular CLI (latest)
 * Notepad++
 * Postman
