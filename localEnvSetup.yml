@@ -123,6 +123,55 @@
         - python3-dev
         - python3-venv
 
+    # Install Node.JS
+    - name: Download Node.js setup script
+      get_url:
+        url: https://deb.nodesource.com/setup
+        dest: /opt
+        mode: 755
+    - name: Setup Node.js
+      command: /opt/setup
+    - name: Install Node.js (JavaScript run-time environment)
+      apt:
+        name: nodejs
+        update_cache: yes
+    - name: Confirm NodeJS is installed
+      command: node --version
+      register: node_result
+      ignore_errors: yes
+    - debug:
+         msg: "NodeJS installation failed"
+      when: node_result is failed
+    - debug:
+         msg: "NodeJS installation succeeded. Version: {{ node_result.stdout_lines }}"
+      when: node_result is success      
+    - name: Confirm NPM is installed
+      command: npm --version
+      register: npm_result
+      ignore_errors: yes
+    - debug:
+         msg: "NPM installation failed"
+      when: npm_result is failed
+    - debug:
+         msg: "NPM installation succeeded. Version: {{ npm_result.stdout_lines }}"
+      when: npm_result is success
+
+    # Install Angular CLI
+    - name: Install Angular CLI
+      npm:
+        name: @angular/cli
+        global: yes
+        state: latest
+    - name: Confirm Angular CLI is installed
+      command: ng --version
+      register: ng_result
+      ignore_errors: yes
+    - debug:
+         msg: "Angular CLI installation failed"
+      when: ng_result is failed
+    - debug:
+         msg: "Angular CLI installation succeeded. Version: {{ ng_result.stdout_lines }}"    
+
     # Install Notepad++
     - name: Install Notepad++
       snap:

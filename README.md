@@ -20,6 +20,8 @@ Running this playbook will install the following:
 * ASP .NET Core Runtime 3.1
 * .NET Core Runtime 3.1
 * Python development environment packages
+* NodeJS
+* Angular CLI (latest)
 * Notepad++
 * Postman
 * PuTTY SSH Client
