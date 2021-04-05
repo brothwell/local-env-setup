@@ -6,26 +6,35 @@
   become_method: sudo
   tasks:
 
-    # Install OpenJDK
-    - name: Install OpenJDK 11
+    # Install Development Packages
+    - name: Install Development Packages
       apt:
-        name: openjdk-11-jdk
+        name: "{{ dev_packages }}"
+        update_cache: yes
+      vars:
+        dev_packages:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - software-properties-common
+        - gnupg-agent
+
+    # Install OpenJDK
+    - name: "Install OpenJDK {{ openjdk_version | default('11') }}"
+      apt:
+        name: openjdk-{{ openjdk_version | default('11') }}-jdk
         state: latest
         install_recommends: no
         update_cache: yes
     - name: Confirm java is installed
-      command: java -version
+      command: java --version
       register: java_result
       ignore_errors: yes
     - debug:
-         msg: "Java installation failed"
-      when: java_result is failed
-    - debug:
-         msg: "Java installation succeeded. Version: {{ java_result.stdout_lines }}"
-      when: java_result is success
+         var: java_result
 
     # Install Maven
-    - name: Update system package cache and Install Maven
+    - name: Install Maven
       apt:
         name: maven
         state: latest
@@ -36,76 +45,82 @@
       register: maven_result
       ignore_errors: yes
     - debug:
-         msg: "Maven installation failed"
-      when: maven_result is failed
+         var: maven_result
+    
+    # Install Kotlin
+    - name: Install Kotlin
+      snap:
+        name: kotlin
+        classic: yes  
+    - name: Confirm Kotlin is installed
+      command: kotlinc -version
+      register: kotlin_result
+      ignore_errors: yes
     - debug:
-         msg: "Maven installation succeeded. Version: {{ maven_result.stdout_lines }}"
-      when: maven_result is success
-
-    # Install Docker
-    - name: Install Docker prerequesite packages
+         var: kotlin_result
+    
+    # Install Go
+    - name: Install Go
       apt:
-        name: "{{ docker_packages }}"
-        update_cache: yes
-      vars:
-        docker_packages:
-        - apt-transport-https
-        - ca-certificates
-        - curl
-        - software-properties-common
-    - name: Add GPG Key for Docker repository to local system
-      apt_key:
-        url: https://download.docker.com/linux/ubuntu/gpg
-    - name: Add Docker repository
-      apt_repository:
-        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable
-        state: present
-        update_cache: yes
-    - name: Install Docker
-      apt:
-        name: docker-ce
+        name: golang
         state: latest
-        install_recommends: no
         update_cache: yes
+    - name: Confirm Go is installed
+      command: go version
+      register: go_result
+      ignore_errors: yes
+    - debug:
+         var: go_result
+    
+    # Install Docker
+    - name: Install Docker
+      snap:
+        name: docker
+        classic: yes  
+    - name: Confirm Docker is installed
+      command: docker --version
+      register: docker_result
+      ignore_errors: yes
+    - debug:
+         var: docker_result
+      
+    # Install Docker-Compose
+    - name: Install Docker-Compose
+      apt:
+        name: docker-compose
+        update_cache: yes
+    - name: Confirm Docker-Compose is installed
+      command: docker-compose --version
+      register: docker_compose_result
+      ignore_errors: yes
+    - debug:
+         var: docker_compose_result    
         
     # Install .NET Core SDK
-    - name: Register the Microsoft key, register the Microsoft Product Repository
-      get_url:
-        url: https://packages.microsoft.com/config/ubuntu/19.10/packages-microsoft-prod.deb
-        dest: /var/cache/apt/archives
-      register: microsoft_key_repo
-      retries: 3
-      until: microsoft_key_repo is success
-    - name: Install Microsoft Product Repository package
-      apt:
-        deb: /var/cache/apt/archives/packages-microsoft-prod.deb
     - name: Install DotNet SDK
-      apt:
-        name: dotnet-sdk-3.1
-        install_recommends: yes
-        update_cache: yes
+      snap:
+        name: dotnet-sdk
+        channel: "{{ dotnet_version | default('3.1') }}"
+        classic: yes
+        state: present
     - name: Confirm .NET Core SDK is installed
       command: dotnet --list-sdks
       register: dotnet_result
       ignore_errors: yes
     - debug:
-         msg: "DotNet installation failed"
-      when: dotnet_result is failed
-    - debug:
-         msg: "DotNet installation succeeded. Version: {{ dotnet_result.stdout_lines }}"
-      when: dotnet_result is success
+         var: dotnet_result
 
     # Install ASP.NET Core Runtime
     - name: Install ASP.NET Core Runtime
       apt:
-        name: aspnetcore-runtime-3.1
+        name: aspnetcore-runtime-{{ dotnet_version | default('3.1') }}
         install_recommends: yes
         update_cache: yes
 
-    # Instasll .NET Core Runtime
+    # Installs .NET Core Runtime
     - name: Install .NET Core Runtime
       apt:
-        name: dotnet-runtime-3.1
+        name: dotnet-runtime-{{ dotnet_version | default('3.1') }}
         install_recommends: yes
         update_cache: yes
         
@@ -116,21 +131,14 @@
         update_cache: yes
       vars:
         python_packages:
-        - python3-pip
+        - python{{ python_version | default('3') }}-pip
         - build-essential
         - libssl-dev
         - libffi-dev
-        - python3-dev
-        - python3-venv
+        - python{{ python_version | default('3') }}-dev
+        - python{{ python_version | default('3') }}-venv
 
     # Install Node.JS
-    - name: Download Node.js setup script
-      get_url:
-        url: https://deb.nodesource.com/setup_12.x
-        dest: /opt
-        mode: 755
-    - name: Setup Node.js
-      command: /opt/setup_12.x
     - name: Install Node.js (JavaScript run-time environment)
       apt:
         name: nodejs
@@ -140,48 +148,61 @@
       register: node_result
       ignore_errors: yes
     - debug:
-         msg: "NodeJS installation failed"
-      when: node_result is failed
-    - debug:
-         msg: "NodeJS installation succeeded. Version: {{ node_result.stdout_lines }}"
-      when: node_result is success      
+         var: node_result
+ 
+    # Install NPM
+    - name: Install NPM (Node Package Manager)
+      apt:
+        name: npm
+        update_cache: yes      
     - name: Confirm NPM is installed
       command: npm --version
       register: npm_result
       ignore_errors: yes
     - debug:
-         msg: "NPM installation failed"
-      when: npm_result is failed
+         var: npm_result
+         
+    # Install Create React App
+    - name: Install Create React App
+      npm:
+        name: create-react-app
+        global: yes
+        state: present
+    - name: Confirm Create React App is installed
+      command: create-react-app --version
+      register: react_result
+      ignore_errors: yes
     - debug:
-         msg: "NPM installation succeeded. Version: {{ npm_result.stdout_lines }}"
-      when: npm_result is success
+         var: react_result         
 
     # Install Angular CLI
     - name: Install Angular CLI
       npm:
         name: "@angular/cli"
         global: yes
-        state: latest
+        state: present
     - name: Confirm Angular CLI is installed
       command: ng --version
       register: ng_result
       ignore_errors: yes
     - debug:
-         msg: "Angular CLI installation failed"
-      when: ng_result is failed
-    - debug:
-         msg: "Angular CLI installation succeeded. Version: {{ ng_result.stdout_lines }}"    
+         var: ng_result
 
     # Install Notepad++
     - name: Install Notepad++
       snap:
         name: notepad-plus-plus
-        classic: yes
+        classic: yes        
 
     # Install Postman
     - name: Install Postman
       snap:
         name: postman
+    
+    # Install Insomnia
+    - name: Install Insomnia
+      snap:
+        name: insomnia
 
     # Install PuTTY SSH Client
     - name: Install PuTTY SSH Client
@@ -214,3 +235,36 @@
         name: pgadmin3
         state: latest
         update_cache: yes
+    
+    # Install MySQL Workbench
+    - name: Install MySQL Workbench
+      snap:
+        name: mysql-workbench-community
+        classic: yes
+    
+    # Install MongoDB
+    - name: Install MongoDB
+      apt:
+        name: mongodb
+        update_cache: yes      
+    - name: Confirm MongoDB is installed
+      command: mongod --version
+      register: mongodb_result
+      ignore_errors: yes
+    - debug:
+         var: mongodb_result
+
+    # Install GIMP
+    - name: Add GIMP PPA Repository
+      apt_repository:
+        repo: ppa:otto-kesselgulasch/gimp-edge
+        state: present
+        update_cache: yes
+    - name: Install GIMP packages
+      apt:
+        name: "{{ gimp_packages }}"
+        update_cache: yes
+      vars:
+        gimp_packages:
+        - gimp
+        - gimp-gmic
