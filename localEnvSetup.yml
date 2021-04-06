@@ -110,20 +110,12 @@
     - debug:
          var: dotnet_result
 
-    # Install ASP.NET Core Runtime
-    - name: Install ASP.NET Core Runtime
-      apt:
-        name: aspnetcore-runtime-{{ dotnet_version | default('3.1') }}
-        install_recommends: yes
-        update_cache: yes
-
-    # Installs .NET Core Runtime
+    # Install .NET Core Runtime
     - name: Install .NET Core Runtime
-      apt:
-        name: dotnet-runtime-{{ dotnet_version | default('3.1') }}
-        install_recommends: yes
-        update_cache: yes
-        
+      snap:
+        name: dotnet-runtime-{{ dotnet_version | default('31') | replace('.','') }}
+        state: present
+    
     # Install Python
     - name: Install Python development environment packages
       apt:
@@ -210,12 +202,6 @@
         name: putty
         state: latest
         update_cache: yes
-
-    # Install Remmina Remote Desktop Client
-    - name: Install Remmina Remote Desktop Client
-      snap:
-        name: remmina
-        classic: yes
 
     # Install IntelliJ
     - name: Install IntelliJ IDEA Community

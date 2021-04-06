@@ -6,10 +6,13 @@
 	* [Installing Git](#installing-git)
 	* [Installing Ansible](#installing-ansible)
 * [Running the Playbook](#running-the-playbook)
+	* [Check Syntax](#check-syntax)
+	* [Dry Run](#dry-run)
+* [Custom Variables](#custom-variables)
 
 ## Overview
 
-This project contains an Ansible playbook to set up a local development environment on an Ubuntu 20.04 machine. 
+This project contains a simple Ansible playbook to set up a local development environment on an Ubuntu 20.04 machine. 
 Running this playbook will install the following:
 
 * OpenJDK11
@@ -20,7 +23,6 @@ Running this playbook will install the following:
 * Docker (latest)
 * Docker-Compose (latest)
 * .NET SDK 3.1
-* ASP .NET Core Runtime 3.1
 * .NET Core Runtime 3.1
 * Python development environment packages
 * NodeJS (latest)
@@ -31,7 +33,6 @@ Running this playbook will install the following:
 * Postman
 * Insomnia
 * PuTTY SSH Client
-* Remmina Remote Desktop Client
 * IntelliJ IDEA Community
 * Microsoft Visual Studio Code
 * pgAdminIII
@@ -46,25 +47,38 @@ To run this project, you will need the following installed:
 * Git
 * Ansible
 
-#### Installing Git
+#### Installing Git and Ansible
 
 ```
 $ sudo apt update
 $ sudo apt upgrade
-$ sudo apt install git
+$ sudo apt install git ansible
 ```
 
-#### Installing Ansible
-
-```
-$ sudo apt update
-$ sudo apt install software-properties-common
-$ sudo apt-add-repository --yes --update ppa:ansible/ansible
-$ sudo apt install ansible
-```
-	
 ## Running the Playbook
 
 ```
 $ ansible-playbook -vvvv -e ansible_become_pass=<sudoPassword> localEnvSetup.yml
 ```
+
+### Check Syntax
+
+```
+$ ansible-playbook localEnvSetup.yml --syntax-check
+```
+
+### Dry Run
+
+```
+$ ansible-playbook -vvvv -e ansible_become_pass=<sudoPassword> localEnvSetup.yml --check
+```  
+
+## Custom Variables
+
+Some installation versions have been parameterised. Others have not due to a personal preference of installing the latest of certain packages.
+
+Custom variables:
+
+* openjdk_version - default: "11"
+* dotnet_version - default: "3.1"
+* python_version - default: "3"
