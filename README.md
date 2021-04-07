@@ -1,16 +1,5 @@
 # Local Environment Setup - Ansible Automation
 
-## Table of contents
-* [Overview](#overview)
-* [Prerequisites](#prerequisites)
-	* [Installing Git](#installing-git)
-	* [Installing Ansible](#installing-ansible)
-* [Running the Playbook](#running-the-playbook)
-	* [Check Syntax](#check-syntax)
-	* [Dry Run](#dry-run)
-* [Custom Variables](#custom-variables)
-* [Feedback](#feedback)
-
 ## Overview
 
 In an attempt to find an excuse to learn some Ansible basics, I decided to write a playbook to install everything I needed on my local machine, with the idea being that all
@@ -96,4 +85,4 @@ Custom variables:
 
 ## Feedback
 
-If you have any suggestions comments or feedback, please leave a GitHub Issue or feel free to submit a pull request.
+If you have any suggestions, comments or feedback, please leave a GitHub Issue or feel free to submit a pull request.
