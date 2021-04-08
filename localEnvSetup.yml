@@ -202,6 +202,13 @@
         name: putty
         state: latest
         update_cache: yes
+    
+    # Install OpenVPN Client
+    - name: Install OpenVPN Client
+      apt:
+        name: openvpn
+        state: latest
+        update_cache: yes
 
     # Install IntelliJ
     - name: Install IntelliJ IDEA Community

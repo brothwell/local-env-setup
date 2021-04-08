@@ -33,6 +33,7 @@ Running this playbook will install the following:
 * Postman
 * Insomnia
 * PuTTY SSH Client
+* OpenVPN Client
 * IntelliJ IDEA Community
 * Microsoft Visual Studio Code
 * pgAdminIII
