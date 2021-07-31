@@ -6,6 +6,16 @@
   become_method: sudo
   tasks:
 
+    # Disable Auto-adding of Network Printers
+    - name: Disable Auto-adding of Network Printers
+      command: systemctl stop cups-browsed
+
+    # Install GU Firewall
+    - name: Install GU Firewall
+      apt:
+        name: gufw
+        update_cache: yes
+
     # Install Development Packages
     - name: Install Development Packages
       apt:
@@ -17,7 +27,7 @@
         - ca-certificates
         - curl
         - software-properties-common
-        - gnupg-agent
+        - gnupg2
 
     # Install OpenJDK
     - name: "Install OpenJDK {{ openjdk_version | default('11') }}"
@@ -77,10 +87,13 @@
       apt_key:
         url: https://download.docker.com/linux/ubuntu/gpg
         state: present
+      ignore_errors: true
+      check_mode: no
     - name: Add apt repository for stable version of Docker
       apt_repository:
-        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
         state: present
+      check_mode: no
     - name: Install Docker
       apt:
         name: "{{ packages }}"
@@ -95,6 +108,7 @@
       user:
         name: "{{ ansible_user }}"
         group: docker
+      when: not ansible_check_mode
     - name: Confirm Docker is installed
       command: docker version
       register: docker_result
@@ -119,8 +133,13 @@
       get_url:
         url: https://packages.microsoft.com/config/ubuntu/{{ ansible_distribution_version }}/packages-microsoft-prod.deb
         dest: /tmp/packages-microsoft-prod.deb
+      check_mode: no
+      register: result
+      retries: 3
+      until: result is success
     - name: Install MS product repository for .NET Core installation
       apt: deb=/tmp/packages-microsoft-prod.deb
+      check_mode: no
     - name: Install .NET Core SDK
       apt:
         name: dotnet-sdk-{{ dotnet_version | default('3.1') }}
@@ -206,11 +225,13 @@
       apt_key:
         url: https://download.sublimetext.com/sublimehq-pub.gpg
         state: present
+      check_mode: no
     - name: Add specified repositories into sources list using specified filename
       apt_repository:
         repo: deb https://download.sublimetext.com/ apt/stable/
         state: present
         filename: sublime
+      check_mode: no
     - name: Install SubLime Text
       apt:
         name: sublime-text
@@ -223,12 +244,14 @@
         classic: yes
     
     # Install Insomnia
-    - name: Download Insomnia deb package
-      get_url: 
-        url: https://updates.insomnia.rest/downloads/ubuntu/latest
-        dest: /tmp/insomnia_7.1.1_amd64.deb
+    - name: Add Insomnia Package Repository
+      apt_repository:
+        repo: deb [trusted=yes arch=amd64] https://download.konghq.com/insomnia-ubuntu default all
+        state: present
+      check_mode: no
     - name: Install Insomnia
-      apt: deb=/tmp/insomnia_7.1.1_amd64.deb
+      apt:
+        name: insomnia
 
     # Install PuTTY SSH Client
     - name: Install PuTTY SSH Client
@@ -255,10 +278,12 @@
       apt_key:
         url: https://packages.microsoft.com/keys/microsoft.asc
         state: present
+      check_mode: no
     - name: Add apt repository for stable version of Visual Studio Code
       apt_repository:
         repo: deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main
         state: present
+      check_mode: no
     - name: Install Microsoft Visual Studio Code
       apt:
         name: code
@@ -272,10 +297,14 @@
          var: vscode_result
 
     # Install Microsoft Teams
-    - name: Download Microsoft Teams deb packages
+    - name: Download Microsoft Teams deb package
       get_url:
         url: https://packages.microsoft.com/repos/ms-teams/pool/main/t/teams/teams_1.3.00.5153_amd64.deb
         dest: /tmp/teams_1.3.00.5153_amd64.deb
+      check_mode: no
+      register: result
+      retries: 3
+      until: result is success
     - name: Install Microsoft Teams
       apt: deb=/tmp/teams_1.3.00.5153_amd64.deb
 
@@ -287,10 +316,16 @@
         update_cache: yes
     
     # Install MySQL Workbench
+    - name: Add apt repository for MySQL Workbench
+      apt_repository:
+        repo: deb [trusted=yes arch=amd64] http://repo.mysql.com/apt/ubuntu {{ ansible_distribution_release }} mysql-tools
+        state: present
+      check_mode: no
     - name: Install MySQL Workbench
-      snap:
+      apt:
         name: mysql-workbench-community
-        classic: yes
+        state: latest
+        update_cache: yes
     
     # Install MongoDB
     - name: Install MongoDB
