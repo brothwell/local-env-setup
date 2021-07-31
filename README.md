@@ -2,19 +2,12 @@
 
 ## Overview
 
-In an attempt to find an excuse to learn some Ansible basics, I decided to write a playbook to install everything I needed on my local machine, with the idea being that all
-I would need to do is install Ubuntu, git and ansible, then clone this repo and run the playbook. 
-
-By choosing a project involving only local automation, I didn't need servers to connect to. I also didn't really see the need for an inventory, or elaborate error-handling. 
-However, I could still learn how many of the components worked, as well as variable injection, and some Jinja2 tricks for default values and String-replace regex functions.
-
-Ansible is a rapidly evolving beast, and Ubuntu has made some updates while I have worked on this too, so there has been some tweaking required along the way.
-
-This project contains a simple Ansible playbook to set up a local development environment on an Ubuntu 20.04 machine. At the time of writing, these instructions 
-would lead to installing Ansible version 2.9.6.
+This project contains a simple Ansible playbook to set up a local development environment on an Ubuntu 20.04 machine. Snapd installations were only used where absolutely necessary. 
+At the time of writing, these instructions would lead to installing Ansible version 2.9.6.
 
 Running this playbook will install the following:
 
+* GU FW
 * OpenJDK11
 * Maven (latest)
 * Kotlin
@@ -22,23 +15,26 @@ Running this playbook will install the following:
 * Curl
 * Docker (latest)
 * Docker-Compose (latest)
-* .NET SDK 3.1
-* .NET Core Runtime 3.1
+* .NET Core SDK 3.1
+* ASP .NET Core Runtime 3.1
 * Python development environment packages
 * NodeJS (latest)
 * NPM (latest)
 * create-react-app
 * Angular CLI (latest)
-* Notepad++
+* Sublime Text
 * Postman
 * Insomnia
 * PuTTY SSH Client
 * OpenVPN Client
 * IntelliJ IDEA Community
 * Microsoft Visual Studio Code
+* Microsoft Teams
 * pgAdminIII
 * MySQL Workbench
 * MongoDB
+
+It will also disable the service that auto-adds network printers.
 
 ## Prerequisites
 
