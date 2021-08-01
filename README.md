@@ -36,6 +36,8 @@ Running this playbook will install the following:
 
 It will also disable the service that auto-adds network printers.
 
+*NB: You will need to reboot after running this playbook for your user to have access to the Docker CLI*
+
 ## Prerequisites
 
 To run this project, you will need the following installed:
@@ -55,7 +57,7 @@ $ sudo apt install git ansible
 ## Running the Playbook
 
 ```
-$ ansible-playbook -vvvv -e ansible_become_pass=<sudoPassword> localEnvSetup.yml
+$ ansible-playbook -vvvv -e ansible_become_pass=<sudoPassword> -e username=<yourUsername> localEnvSetup.yml
 ```
 
 ### Check Syntax
@@ -67,7 +69,7 @@ $ ansible-playbook localEnvSetup.yml --syntax-check
 ### Dry Run
 
 ```
-$ ansible-playbook -vvvv -e ansible_become_pass=<sudoPassword> localEnvSetup.yml --check
+$ ansible-playbook -vvvv -e ansible_become_pass=<sudoPassword> -e username=<yourUsername> localEnvSetup.yml --check
 ```  
 
 ## Custom Variables

@@ -107,8 +107,10 @@
         - containerd.io
     - name: Add user to docker group
       user:
-        name: "{{ ansible_user }}"
+        name: "{{ username }}"
         group: docker
+      become: yes
+      become_user: "{{ username }}"
       when: not ansible_check_mode
     - name: Confirm Docker is installed
       command: docker version
@@ -297,6 +299,8 @@
       command: code --version
       register: vscode_result
       ignore_errors: yes
+      become: yes
+      become_user: "{{ username }}"
     - debug:
          var: vscode_result
 
