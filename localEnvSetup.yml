@@ -109,9 +109,6 @@
       user:
         name: "{{ username }}"
         group: docker
-      become: yes
-      become_user: "{{ username }}"
-      when: not ansible_check_mode
     - name: Confirm Docker is installed
       command: docker version
       register: docker_result
