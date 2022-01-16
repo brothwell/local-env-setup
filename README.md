@@ -13,6 +13,7 @@ Running this playbook will install the following:
 * Kotlin
 * Go
 * Curl
+* Kubectl
 * Docker (latest)
 * Docker-Compose (latest)
 * .NET Core SDK 3.1
@@ -33,6 +34,7 @@ Running this playbook will install the following:
 * pgAdminIII
 * MySQL Workbench
 * MongoDB
+* ClamAV & ClamTK
 
 It will also disable the service that auto-adds network printers.
 
@@ -42,7 +44,7 @@ It will also disable the service that auto-adds network printers.
 
 To run this project, you will need the following installed:
 
-* Ubuntu 20.04
+* Ubuntu 20.04+
 * Git
 * Ansible
 
@@ -57,7 +59,7 @@ $ sudo apt install git ansible
 ## Running the Playbook
 
 ```
-$ ansible-playbook -vvvv -e ansible_become_pass=<sudoPassword> -e username=<yourUsername> localEnvSetup.yml
+$ ansible-playbook -vvvvK -e username=<yourUsername> localEnvSetup.yml
 ```
 
 ### Check Syntax
@@ -69,7 +71,7 @@ $ ansible-playbook localEnvSetup.yml --syntax-check
 ### Dry Run
 
 ```
-$ ansible-playbook -vvvv -e ansible_become_pass=<sudoPassword> -e username=<yourUsername> localEnvSetup.yml --check
+$ ansible-playbook -vvvvK -e username=<yourUsername> localEnvSetup.yml --check
 ```  
 
 ## Custom Variables

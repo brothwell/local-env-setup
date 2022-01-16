@@ -8,7 +8,9 @@
 
     # Disable Auto-adding of Network Printers
     - name: Disable Auto-adding of Network Printers
-      command: systemctl stop cups-browsed
+      service:
+        name: cups-browsed
+        state: stopped
 
     # Install GU Firewall
     - name: Install GU Firewall
@@ -28,6 +30,7 @@
         - curl
         - software-properties-common
         - gnupg2
+        - vim
 
     # Install OpenJDK
     - name: "Install OpenJDK {{ openjdk_version | default('11') }}"
@@ -220,6 +223,30 @@
     - debug:
          var: ng_result
 
+    # Install Kubectl
+    - name: Install Google Cloud public signing key
+      apt_key:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        state: present
+      check_mode: no
+    - name: Add the Kubernetes apt repository
+      apt_repository:
+        repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+        state: present
+        filename: sublime
+        update_cache: yes
+      check_mode: no
+    - name: Install Kubectl
+      apt:
+        name: kubectl
+        update_cache: yes
+    - name: Confirm Kubectl is installed
+      command: kubectl version --client
+      register: kubectl_result
+      ignore_errors: yes
+    - debug:
+         var: kubectl_result
+
     # Install Sublime Text
     - name: Install GPG key for SubLime Text
       apt_key:
@@ -304,14 +331,15 @@
     # Install Microsoft Teams
     - name: Download Microsoft Teams deb package
       get_url:
-        url: https://packages.microsoft.com/repos/ms-teams/pool/main/t/teams/teams_1.3.00.5153_amd64.deb
-        dest: /tmp/teams_1.3.00.5153_amd64.deb
+        url: https://packages.microsoft.com/repos/ms-teams/pool/main/t/teams/teams_1.4.00.7556_amd64.deb
+        dest: /tmp/teams_1.4.00.7556_amd64.deb
       check_mode: no
       register: result
       retries: 3
       until: result is success
     - name: Install Microsoft Teams
-      apt: deb=/tmp/teams_1.3.00.5153_amd64.deb
+      apt: deb=/tmp/teams_1.4.00.7556_amd64.deb
+      ignore_errors: yes
 
     # Install pgAdminIII
     - name: Install pgAdminIII
@@ -359,3 +387,39 @@
         gimp_packages:
         - gimp
         - gimp-gmic
+
+    # Install ClamAV & ClamTK
+    - name: Install ClamAV packages
+      apt:
+        name: "{{ clamav_packages }}"
+        state: latest
+        update_cache: yes
+      vars:
+        clamav_packages:
+        - clamav
+        - clamav-daemon
+        - clamtk
+    # - name: Stop the ClamAV service
+    #   service:
+    #     name: clamav-freshclam
+    #     state: stopped
+    # - name: Manually update the ClamAV signature database
+    #   command: freshclam
+    # - name: Restart the ClamAV service
+    #   service:
+    #     name: clamav-freshclam
+    #     state: restarted
+    # - name: Download ClamTK deb package
+    #   get_url:
+    #     url: https://github.com/dave-theunsub/clamtk/releases/download/v6.14/clamtk_6.14-1_all.deb
+    #     dest: /tmp/clamtk_6.14-1_all.deb
+    #   check_mode: no
+    #   register: result
+    #   retries: 3
+    #   until: result is success
+    # - name: Install ClamTK
+    #   apt: deb=/tmp/clamtk_6.14-1_all.deb
+
+    # CLEANUP
+    - name: Clean up tmp directory
+      shell: rm -rf /tmp/*.deb
