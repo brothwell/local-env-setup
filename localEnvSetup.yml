@@ -31,6 +31,7 @@
         - software-properties-common
         - gnupg2
         - vim
+        - dirmngr
 
     # Install OpenJDK
     - name: "Install OpenJDK {{ openjdk_version | default('11') }}"
@@ -40,7 +41,7 @@
         install_recommends: no
         update_cache: yes
     - name: Confirm java is installed
-      command: java --version
+      shell: java --version
       register: java_result
       ignore_errors: yes
     - debug:
@@ -54,7 +55,7 @@
         install_recommends: no
         update_cache: yes
     - name: Confirm Maven is installed
-      command: mvn --version
+      shell: mvn --version
       register: maven_result
       ignore_errors: yes
     - debug:
@@ -66,7 +67,7 @@
         name: kotlin
         classic: yes  
     - name: Confirm Kotlin is installed
-      command: kotlinc -version
+      shell: kotlinc -version
       register: kotlin_result
       ignore_errors: yes
     - debug:
@@ -79,22 +80,23 @@
         state: latest
         update_cache: yes
     - name: Confirm Go is installed
-      command: go version
+      shell: go version
       register: go_result
       ignore_errors: yes
     - debug:
          var: go_result
     
     # Install Docker
-    - name: Add an apt signing key for Docker
-      apt_key:
-        url: https://download.docker.com/linux/ubuntu/gpg
-        state: present
-      ignore_errors: true
+    - name: Add Docker apt repository key.
+      get_url:
+        url: https://download.docker.com/linux/debian/gpg
+        dest: /usr/share/keyrings/docker.gpg
+        mode: '0644'
+        force: true
       check_mode: no
     - name: Add apt repository for stable version of Docker
       apt_repository:
-        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+        repo: deb [arch=amd64 signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
         state: present
         update_cache: yes
       check_mode: no
@@ -113,7 +115,7 @@
         name: "{{ username }}"
         group: docker
     - name: Confirm Docker is installed
-      command: docker version
+      shell: docker version
       register: docker_result
       ignore_errors: yes
     - debug:
@@ -125,7 +127,7 @@
         name: docker-compose
         update_cache: yes
     - name: Confirm Docker-Compose is installed
-      command: docker-compose --version
+      shell: docker-compose --version
       register: docker_compose_result
       ignore_errors: yes
     - debug:
@@ -145,18 +147,18 @@
       check_mode: no
     - name: Install .NET Core SDK
       apt:
-        name: dotnet-sdk-{{ dotnet_version | default('3.1') }}
+        name: dotnet-sdk-{{ dotnet_version | default('6.0') }}
         state: present
         update_cache: yes
     - name: Confirm .NET Core SDK is installed
-      command: dotnet --version
+      shell: dotnet --version
       register: dotnet_result
       ignore_errors: yes
     - debug:
          var: dotnet_result
     - name: Install ASP .NET Core Runtime
       apt:
-        name: aspnetcore-runtime-{{ dotnet_version | default('3.1') }}
+        name: aspnetcore-runtime-{{ dotnet_version | default('6.0') }}
         update_cache: yes
 
     # Install Python
@@ -179,7 +181,7 @@
         name: nodejs
         update_cache: yes
     - name: Confirm NodeJS is installed
-      command: node --version
+      shell: node --version
       register: node_result
       ignore_errors: yes
     - debug:
@@ -191,7 +193,7 @@
         name: npm
         update_cache: yes      
     - name: Confirm NPM is installed
-      command: npm --version
+      shell: npm --version
       register: npm_result
       ignore_errors: yes
     - debug:
@@ -204,7 +206,7 @@
         global: yes
         state: present
     - name: Confirm Create React App is installed
-      command: create-react-app --version
+      shell: create-react-app --version
       register: react_result
       ignore_errors: yes
     - debug:
@@ -217,7 +219,7 @@
         global: yes
         state: present
     - name: Confirm Angular CLI is installed
-      command: ng --version
+      shell: ng --version
       register: ng_result
       ignore_errors: yes
     - debug:
@@ -225,15 +227,17 @@
 
     # Install Kubectl
     - name: Install Google Cloud public signing key
-      apt_key:
+      get_url:
         url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-        state: present
+        dest: /usr/share/keyrings/apt-key.gpg
+        mode: '0644'
+        force: true
       check_mode: no
     - name: Add the Kubernetes apt repository
       apt_repository:
-        repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+        repo: deb [signed-by=/usr/share/keyrings/apt-key.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
         state: present
-        filename: sublime
+        filename: kubernetes.list
         update_cache: yes
       check_mode: no
     - name: Install Kubectl
@@ -241,21 +245,41 @@
         name: kubectl
         update_cache: yes
     - name: Confirm Kubectl is installed
-      command: kubectl version --client
+      shell: kubectl version --client
       register: kubectl_result
       ignore_errors: yes
     - debug:
          var: kubectl_result
 
+    # Install Kustomize
+    - name: Get Kustomize install script
+      get_url:
+        url: https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh
+        dest: /tmp/install_kustomize.sh
+      mode: +x
+      register: result
+      retries: 3
+      until: result is success
+    - name: Install Kustomize
+      shell: /tmp/install_kustomize.sh && mv /tmp/kustomize  /usr/local/bin/kustomize && export PATH=$PATH:/usr/local/bin/kustomize
+    - name: Confirm Kustomize is installed
+      shell: kustomize version
+      register: kustomize_result
+      ignore_errors: yes
+    - debug:
+         var: kustomize_result
+
     # Install Sublime Text
     - name: Install GPG key for SubLime Text
-      apt_key:
+      get_url:
         url: https://download.sublimetext.com/sublimehq-pub.gpg
-        state: present
+        dest: /usr/share/keyrings/sublimehq-pub.gpg
+        mode: '0644'
+        force: true
       check_mode: no
     - name: Add specified repositories into sources list using specified filename
       apt_repository:
-        repo: deb https://download.sublimetext.com/ apt/stable/
+        repo: deb [signed-by=/usr/share/keyrings/sublimehq-pub.gpg] https://download.sublimetext.com/ apt/stable/
         state: present
         filename: sublime
         update_cache: yes
@@ -304,13 +328,15 @@
 
     # Install Microsoft Visual Studio Code
     - name: Add an apt signing key for Microsoft Visual Studio Code
-      apt_key:
+      get_url:
         url: https://packages.microsoft.com/keys/microsoft.asc
-        state: present
+        dest: /usr/share/keyrings/microsoft.asc
+        mode: '0644'
+        force: true
       check_mode: no
     - name: Add apt repository for stable version of Visual Studio Code
       apt_repository:
-        repo: deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main
+        repo: deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.asc] https://packages.microsoft.com/repos/vscode stable main
         state: present
         update_cache: yes
       check_mode: no
@@ -320,7 +346,7 @@
         state: present
         update_cache: yes
     - name: Confirm Microsoft Visual Studio Code is installed
-      command: code --version
+      shell: code --version
       register: vscode_result
       ignore_errors: yes
       become: yes
@@ -341,12 +367,26 @@
       apt: deb=/tmp/teams_1.4.00.7556_amd64.deb
       ignore_errors: yes
 
-    # Install pgAdminIII
-    - name: Install pgAdminIII
+    # Install pgAdmin4
+    - name: Add an apt signing key for pgAdmin4
+      get_url:
+        url: https://www.pgadmin.org/static/packages_pgadmin_org.pub
+        dest: /usr/share/keyrings/packages_pgadmin_org.pub
+        mode: '0644'
+        force: true
+      check_mode: no
+    - name: Add apt repository for pgAdmin4
+      apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/packages_pgadmin_org.pub] https://ftp.postgresql.org/pub/pgadmin/pgadmin4/apt/{{ ansible_distribution_release }} pgadmin4 main"
+        state: present
+        update_cache: yes
+      check_mode: no
+    - name: Install pgAdmin4
       apt:
-        name: pgadmin3
+        name: pgadmin4
         state: latest
         update_cache: yes
+
     
     # Install MySQL Workbench
     - name: Add apt repository for MySQL Workbench
@@ -362,31 +402,37 @@
         update_cache: yes
     
     # Install MongoDB
+    - name: Add an apt signing key for mongoDB
+      get_url:
+        url: https://www.mongodb.org/static/pgp/server-6.0.asc
+        dest: /usr/share/keyrings/server-6.0.asc
+        mode: '0644'
+        force: true
+      check_mode: no
+    - name: Add apt repository for mongoDB
+      apt_repository:
+        repo: deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/server-6.0.asc] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse
+        state: present
+        update_cache: yes
+      check_mode: no
     - name: Install MongoDB
       apt:
-        name: mongodb
+        name: mongodb-mongosh
         update_cache: yes      
     - name: Confirm MongoDB is installed
-      command: mongod --version
+      shell: mongod --version
       register: mongodb_result
       ignore_errors: yes
     - debug:
          var: mongodb_result
 
     # Install GIMP
-    - name: Add GIMP PPA Repository
-      apt_repository:
-        repo: ppa:otto-kesselgulasch/gimp-edge
-        state: present
-        update_cache: yes
-    - name: Install GIMP packages
+    - name: Install GIMP
       apt:
-        name: "{{ gimp_packages }}"
+        name: gimp
+        state: latest
         update_cache: yes
-      vars:
-        gimp_packages:
-        - gimp
-        - gimp-gmic
+
 
     # Install ClamAV & ClamTK
     - name: Install ClamAV packages
@@ -404,7 +450,7 @@
     #     name: clamav-freshclam
     #     state: stopped
     # - name: Manually update the ClamAV signature database
-    #   command: freshclam
+    #   shell: freshclam
     # - name: Restart the ClamAV service
     #   service:
     #     name: clamav-freshclam
@@ -422,4 +468,6 @@
 
     # CLEANUP
     - name: Clean up tmp directory
-      shell: rm -rf /tmp/*.deb
+      file:
+        path: /tmp/*.deb
+        state: absent

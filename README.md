@@ -2,8 +2,8 @@
 
 ## Overview
 
-This project contains a simple Ansible playbook to set up a local development environment on an Ubuntu 20.04 machine. Snapd installations were only used where absolutely necessary. 
-At the time of writing, these instructions would lead to installing Ansible version 2.9.6.
+This project contains a simple Ansible playbook to set up a local development environment on an Ubuntu 22.04 machine. Snapd installations were only used where absolutely necessary. 
+At the time of writing, these instructions would lead to installing Ansible version 2.10.8.
 
 Running this playbook will install the following:
 
@@ -14,10 +14,11 @@ Running this playbook will install the following:
 * Go
 * Curl
 * Kubectl
+* Kustomize
 * Docker (latest)
 * Docker-Compose (latest)
-* .NET Core SDK 3.1
-* ASP .NET Core Runtime 3.1
+* .NET Core SDK 6.0
+* ASP .NET Core Runtime 6.0
 * Python development environment packages
 * NodeJS (latest)
 * NPM (latest)
@@ -31,7 +32,7 @@ Running this playbook will install the following:
 * IntelliJ IDEA Community
 * Microsoft Visual Studio Code
 * Microsoft Teams
-* pgAdminIII
+* pgAdmin4
 * MySQL Workbench
 * MongoDB
 * ClamAV & ClamTK
@@ -81,7 +82,7 @@ Some installation versions have been parameterised. Others have not due to a per
 Custom variables:
 
 * openjdk_version - default: "11"
-* dotnet_version - default: "3.1"
+* dotnet_version - default: "6.0"
 * python_version - default: "3"
 
 ## Feedback
