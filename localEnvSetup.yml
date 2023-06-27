@@ -275,6 +275,8 @@
     - name: Install Insomnia
       apt:
         name: insomnia
+        state: latest
+        update_cache: yes
 
     # Install PuTTY SSH Client
     - name: Install PuTTY SSH Client
