@@ -87,18 +87,22 @@
          var: go_result
     
     # Install Docker
-    - name: Create directory for Docker keyring
+    - name: Create directory for apt repository keyrings
       file:
         path: /etc/apt/keyrings
         state: directory
         recurse: yes
     - name: Add Docker apt repository key.
-      shell: curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --batch --yes --dearmor -o /etc/apt/keyrings/docker.gpg
+      get_url:
+        url: https://download.docker.com/linux/debian/gpg
+        dest: /etc/apt/keyrings/docker.asc
     - name: Add apt repository for stable version of Docker
-      shell: >
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] 
-        https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable" | 
-        tee /etc/apt/sources.list.d/docker.list > /dev/null
+      apt_repository:
+        repo: >
+          deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] 
+          https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable
+        state: present
+        update_cache: yes
     - name: Install Docker
       apt:
         name: "{{ packages }}"
@@ -224,16 +228,13 @@
     # Install Kubectl
     - name: Install Google Cloud public signing key
       get_url:
-        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-        dest: /usr/share/keyrings/apt-key.gpg
-        mode: '0644'
-        force: true
+        url: https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key
+        dest: /etc/apt/keyrings/kubernetes-apt-keyring.asc
       check_mode: no
     - name: Add the Kubernetes apt repository
       apt_repository:
-        repo: deb [signed-by=/usr/share/keyrings/apt-key.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
+        repo: deb [signed-by=/usr/share/keyrings/kubernetes-apt-keyring.asc] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /
         state: present
-        filename: kubernetes.list
         update_cache: yes
       check_mode: no
     - name: Install Kubectl
@@ -252,7 +253,7 @@
       get_url:
         url: https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh
         dest: /tmp/install_kustomize.sh
-      mode: +x
+        mode: +x
       register: result
       retries: 3
       until: result is success
@@ -292,15 +293,14 @@
         classic: yes
     
     # Install Insomnia
-    - name: Add Insomnia Package Repository
-      apt_repository:
-        repo: deb [trusted=yes arch=amd64] https://download.konghq.com/insomnia-ubuntu default all
-        state: present
-        update_cache: yes
-      check_mode: no
+    - name: Run Insomnia Setup Script
+      shell: >
+        curl -1sLf https://packages.konghq.com/public/insomnia/setup.deb.sh |
+        sudo -E distro=ubuntu codename=focal bash
     - name: Install Insomnia
       apt:
         name: insomnia
+        update_cache: yes
 
     # Install PuTTY SSH Client
     - name: Install PuTTY SSH Client

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project contains a simple Ansible playbook to set up a local development environment on an Ubuntu 22.04 machine. Snapd installations were only used where absolutely necessary. 
+This project contains a simple Ansible playbook to set up a local development environment on an Ubuntu 24.04 machine. Snapd installations were only used where absolutely necessary. 
 At the time of writing, these instructions would lead to installing Ansible version 2.10.8.
 
 Running this playbook will install the following:
