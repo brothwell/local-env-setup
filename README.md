@@ -44,7 +44,7 @@ It will also disable the service that auto-adds network printers.
 
 To run this project, you will need the following installed:
 
-* Ubuntu 20.04+
+* Ubuntu 24.04
 * Git
 * Ansible
 
