@@ -134,32 +134,17 @@
          var: docker_compose_result    
         
     # Install .NET Core SDK
-    - name: Download MS product repository for .NET Core
-      get_url:
-        url: https://packages.microsoft.com/config/ubuntu/{{ ansible_distribution_version }}/packages-microsoft-prod.deb
-        dest: /tmp/packages-microsoft-prod.deb
-      check_mode: no
-      register: result
-      retries: 3
-      until: result is success
-    - name: Install MS product repository for .NET Core installation
-      apt: deb=/tmp/packages-microsoft-prod.deb
-      check_mode: no
-    - name: Install .NET Core SDK
+    - name: Install .NET Core SDK and Runtime
       apt:
-        name: dotnet-sdk-{{ dotnet_version | default('6.0') }}
+        name: dotnet{{ dotnet_version | default('7') }}
         state: present
         update_cache: yes
-    - name: Confirm .NET Core SDK is installed
-      shell: dotnet --version
+    - name: Confirm .NET SDK and Runtime is installed
+      shell: dotnet --info
       register: dotnet_result
       ignore_errors: yes
     - debug:
          var: dotnet_result
-    - name: Install ASP .NET Core Runtime
-      apt:
-        name: aspnetcore-runtime-{{ dotnet_version | default('6.0') }}
-        update_cache: yes
 
     # Install Python
     - name: Install Python development environment packages
@@ -175,30 +160,28 @@
         - python{{ python_version | default('3') }}-dev
         - python{{ python_version | default('3') }}-venv
 
-    # Install Node.JS
+    # Install Node.JS and NPM
+    - name: Run NodeJS install script
+      shell: "curl -fsSL https://deb.nodesource.com/setup_{{ node_version | default('18') }}.x | sudo -E bash"
+      args:
+        warn: false
     - name: Install Node.js (JavaScript run-time environment)
       apt:
         name: nodejs
         update_cache: yes
     - name: Confirm NodeJS is installed
-      shell: node --version
+      shell: node -v
       register: node_result
       ignore_errors: yes
     - debug:
          var: node_result
- 
-    # Install NPM
-    - name: Install NPM (Node Package Manager)
-      apt:
-        name: npm
-        update_cache: yes      
     - name: Confirm NPM is installed
       shell: npm --version
       register: npm_result
       ignore_errors: yes
     - debug:
          var: npm_result
-         
+
     # Install Create React App
     - name: Install Create React App
       npm:
@@ -219,7 +202,7 @@
         global: yes
         state: present
     - name: Confirm Angular CLI is installed
-      shell: ng --version
+      shell: ng version
       register: ng_result
       ignore_errors: yes
     - debug:
@@ -258,7 +241,7 @@
       retries: 3
       until: result is success
     - name: Install Kustomize
-      shell: /tmp/install_kustomize.sh && mv /tmp/kustomize  /usr/local/bin/kustomize && export PATH=$PATH:/usr/local/bin/kustomize
+      shell: /tmp/install_kustomize.sh && mv ./kustomize  /usr/local/bin/kustomize && export PATH=$PATH:/usr/local/bin/kustomize
     - name: Confirm Kustomize is installed
       shell: kustomize version
       register: kustomize_result
@@ -268,19 +251,14 @@
 
     # Install Sublime Text
     - name: Install GPG key for SubLime Text
-      get_url:
-        url: https://download.sublimetext.com/sublimehq-pub.gpg
-        dest: /usr/share/keyrings/sublimehq-pub.gpg
-        mode: '0644'
-        force: true
-      check_mode: no
-    - name: Add specified repositories into sources list using specified filename
-      apt_repository:
-        repo: deb [signed-by=/usr/share/keyrings/sublimehq-pub.gpg] https://download.sublimetext.com/ apt/stable/
-        state: present
-        filename: sublime
-        update_cache: yes
-      check_mode: no
+      shell: curl -fsSL https://download.sublimetext.com/sublimehq-pub.gpg | gpg --batch --yes --dearmor -o /etc/apt/keyrings/sublimehq-pub.gpg
+      args:
+        warn: false
+    - name: Add SubLime Text apt repository
+      shell: >
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/sublimehq-pub.gpg]
+        https://download.sublimetext.com/ apt/stable/" |
+        tee /etc/apt/sources.list.d/sublimetext.list > /dev/null
     - name: Install SubLime Text
       apt:
         name: sublime-text
@@ -324,18 +302,14 @@
 
     # Install Microsoft Visual Studio Code
     - name: Add an apt signing key for Microsoft Visual Studio Code
-      get_url:
-        url: https://packages.microsoft.com/keys/microsoft.asc
-        dest: /usr/share/keyrings/microsoft.asc
-        mode: '0644'
-        force: true
-      check_mode: no
+      shell: curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --batch --yes --dearmor -o /usr/share/keyrings/vscode.gpg
+      args:
+        warn: false
     - name: Add apt repository for stable version of Visual Studio Code
-      apt_repository:
-        repo: deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.asc] https://packages.microsoft.com/repos/vscode stable main
-        state: present
-        update_cache: yes
-      check_mode: no
+      shell: >
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/vscode.gpg]
+        https://packages.microsoft.com/repos/vscode stable main" |
+        tee /etc/apt/sources.list.d/vscode.list > /dev/null
     - name: Install Microsoft Visual Studio Code
       apt:
         name: code
@@ -350,70 +324,50 @@
     - debug:
          var: vscode_result
 
-    # Install Microsoft Teams
-    - name: Download Microsoft Teams deb package
-      get_url:
-        url: https://packages.microsoft.com/repos/ms-teams/pool/main/t/teams/teams_1.4.00.7556_amd64.deb
-        dest: /tmp/teams_1.4.00.7556_amd64.deb
-      check_mode: no
-      register: result
-      retries: 3
-      until: result is success
-    - name: Install Microsoft Teams
-      apt: deb=/tmp/teams_1.4.00.7556_amd64.deb
-      ignore_errors: yes
-
     # Install pgAdmin4
     - name: Add an apt signing key for pgAdmin4
-      get_url:
-        url: https://www.pgadmin.org/static/packages_pgadmin_org.pub
-        dest: /usr/share/keyrings/packages_pgadmin_org.pub
-        mode: '0644'
-        force: true
-      check_mode: no
+      shell: curl -fsSL https://www.pgadmin.org/static/packages_pgadmin_org.pub | gpg --batch --yes --dearmor -o /etc/apt/keyrings/packages_pgadmin_org.pub
+      args:
+        warn: false
     - name: Add apt repository for pgAdmin4
-      apt_repository:
-        repo: "deb [signed-by=/usr/share/keyrings/packages_pgadmin_org.pub] https://ftp.postgresql.org/pub/pgadmin/pgadmin4/apt/{{ ansible_distribution_release }} pgadmin4 main"
-        state: present
-        update_cache: yes
-      check_mode: no
+      shell: >
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/packages_pgadmin_org.pub]
+        https://ftp.postgresql.org/pub/pgadmin/pgadmin4/apt/{{ ansible_distribution_release }} pgadmin4 main" |
+        tee /etc/apt/sources.list.d/pgAdmin.list > /dev/null
     - name: Install pgAdmin4
       apt:
         name: pgadmin4
         state: latest
         update_cache: yes
-
-    
-    # Install MySQL Workbench
-    - name: Add apt repository for MySQL Workbench
-      apt_repository:
-        repo: deb [trusted=yes arch=amd64] http://repo.mysql.com/apt/ubuntu {{ ansible_distribution_release }} mysql-tools
-        state: present
-        update_cache: yes
-      check_mode: no
-    - name: Install MySQL Workbench
+   
+    # Install MySQL & MySQL Workbench
+    - name: Install MySQL Server
       apt:
-        name: mysql-workbench-community
+        name: mysql-server
         state: latest
         update_cache: yes
+    - name: Ensure MySQL Service is running
+      systemd:
+        state: started
+        name: mysql 
+    - name: Install MySQL Workbench
+      snap:
+        name: mysql-workbench-community
+        classic: yes
     
     # Install MongoDB
     - name: Add an apt signing key for mongoDB
-      get_url:
-        url: https://www.mongodb.org/static/pgp/server-6.0.asc
-        dest: /usr/share/keyrings/server-6.0.asc
-        mode: '0644'
-        force: true
-      check_mode: no
+      shell: curl -fsSL https://www.mongodb.org/static/pgp/server-6.0.asc | gpg --batch --yes --dearmor -o /etc/apt/keyrings/mongodb.gpg
+      args:
+        warn: false
     - name: Add apt repository for mongoDB
-      apt_repository:
-        repo: deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/server-6.0.asc] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse
-        state: present
-        update_cache: yes
-      check_mode: no
+      shell: >
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/mongodb.gpg] 
+        https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" |
+        tee /etc/apt/sources.list.d/mongodb-org-6.0.list > /dev/null
     - name: Install MongoDB
       apt:
-        name: mongodb-mongosh
+        name: mongodb-org
         update_cache: yes      
     - name: Confirm MongoDB is installed
       shell: mongod --version
@@ -465,5 +419,8 @@
     # CLEANUP
     - name: Clean up tmp directory
       file:
-        path: /tmp/*.deb
+        path: "{{ item }}"
         state: absent
+      loop:
+        - /tmp/*.deb
+        - /tmp/*.sh

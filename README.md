@@ -17,10 +17,9 @@ Running this playbook will install the following:
 * Kustomize
 * Docker (latest)
 * Docker-Compose (latest)
-* .NET Core SDK 6.0
-* ASP .NET Core Runtime 6.0
+* .NET Core (SDK and Runtime) 7
 * Python development environment packages
-* NodeJS (latest)
+* NodeJS 18
 * NPM (latest)
 * create-react-app
 * Angular CLI (latest)
@@ -82,7 +81,8 @@ Some installation versions have been parameterised. Others have not due to a per
 Custom variables:
 
 * openjdk_version - default: "11"
-* dotnet_version - default: "6.0"
+* node_version - default: "18"
+* dotnet_version - default: "6"
 * python_version - default: "3"
 
 ## Feedback
