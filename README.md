@@ -17,9 +17,9 @@ Running this playbook will install the following:
 * Kustomize
 * Docker (latest)
 * Docker-Compose (latest)
-* .NET Core (SDK and Runtime) 7
+* .NET Core (SDK and Runtime)
 * Python development environment packages
-* NodeJS 18
+* NodeJS
 * NPM (latest)
 * create-react-app
 * Angular CLI (latest)
@@ -51,27 +51,27 @@ To run this project, you will need the following installed:
 #### Installing Git and Ansible
 
 ```
-$ sudo apt update
-$ sudo apt upgrade
-$ sudo apt install git ansible
+sudo apt update
+sudo apt upgrade
+sudo apt install git ansible
 ```
 
 ## Running the Playbook
 
 ```
-$ ansible-playbook -vvvvK -e username=<yourUsername> localEnvSetup.yml
+ansible-playbook -vvvvK -e username=<yourUsername> localEnvSetup.yml
 ```
 
 ### Check Syntax
 
 ```
-$ ansible-playbook localEnvSetup.yml --syntax-check
+ansible-playbook localEnvSetup.yml --syntax-check
 ```
 
 ### Dry Run
 
 ```
-$ ansible-playbook -vvvvK -e username=<yourUsername> localEnvSetup.yml --check
+ansible-playbook -vvvvK -e username=<yourUsername> localEnvSetup.yml --check
 ```  
 
 ## Custom Variables
@@ -81,8 +81,8 @@ Some installation versions have been parameterised. Others have not due to a per
 Custom variables:
 
 * openjdk_version - default: "11"
-* node_version - default: "18"
-* dotnet_version - default: "6"
+* node_version - default: "22"
+* dotnet_version - default: "8.0"
 * python_version - default: "3"
 
 ## Feedback

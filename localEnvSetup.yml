@@ -32,6 +32,7 @@
         - gnupg2
         - vim
         - dirmngr
+        - zlib1g
 
     # Install OpenJDK
     - name: "Install OpenJDK {{ openjdk_version | default('11') }}"
@@ -92,17 +93,29 @@
         path: /etc/apt/keyrings
         state: directory
         recurse: yes
-    - name: Add Docker apt repository key.
-      get_url:
-        url: https://download.docker.com/linux/debian/gpg
-        dest: /etc/apt/keyrings/docker.asc
+        mode: '0755'
+    - name: Check that Docker apt repository key exists
+      stat:
+        path: /etc/apt/keyrings/docker.asc
+      register: docker_key_result
+    - name: Add Docker apt repository key
+      shell: >
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg
+        -o /etc/apt/keyrings/docker.asc && 
+        chmod a+r /etc/apt/keyrings/docker.asc
+      when: docker_key_result.stat.exists == False
+    - name: Check that Docker apt repository list file exists
+      stat:
+        path: /etc/apt/sources.list.d/docker.list
+      register: docker_list_result
     - name: Add apt repository for stable version of Docker
-      apt_repository:
-        repo: >
-          deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] 
-          https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable
-        state: present
-        update_cache: yes
+      shell: >
+        echo "deb [arch=$(dpkg --print-architecture)
+        signed-by=/etc/apt/keyrings/docker.asc]
+        https://download.docker.com/linux/ubuntu
+        $(. /etc/os-release && echo "$VERSION_CODENAME") stable" |
+        sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+      when: docker_list_result.stat.exists == False
     - name: Install Docker
       apt:
         name: "{{ packages }}"
@@ -136,9 +149,14 @@
     # Install .NET Core SDK
     - name: Install .NET Core SDK and Runtime
       apt:
-        name: dotnet{{ dotnet_version | default('7') }}
+        name: "{{ packages }}"
         state: present
         update_cache: yes
+      vars:
+        packages:
+          - dotnet-sdk-{{ dotnet_version | default('8.0') }}
+          - aspnetcore-runtime-{{ dotnet_version | default('8.0') }}
+          - dotnet-runtime-{{ dotnet_version | default('8.0') }}
     - name: Confirm .NET SDK and Runtime is installed
       shell: dotnet --info
       register: dotnet_result
@@ -162,10 +180,8 @@
 
     # Install Node.JS and NPM
     - name: Run NodeJS install script
-      shell: "curl -fsSL https://deb.nodesource.com/setup_{{ node_version | default('18') }}.x | sudo -E bash"
-      args:
-        warn: false
-    - name: Install Node.js (JavaScript run-time environment)
+      shell: "curl -fsSL https://deb.nodesource.com/setup_{{ node_version | default('22') }}.x | sudo -E bash"
+    - name: Install Node.js
       apt:
         name: nodejs
         update_cache: yes
@@ -209,21 +225,34 @@
          var: ng_result
 
     # Install Kubectl
+    - name: Check that Google Cloud repository gpg exists
+      stat:
+        path: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+      register: google_gpg_result
     - name: Install Google Cloud public signing key
-      get_url:
-        url: https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key
-        dest: /etc/apt/keyrings/kubernetes-apt-keyring.asc
+      shell: >
+        curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key |
+        gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg &&
+        chmod 644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg 
       check_mode: no
+      when: google_gpg_result.stat.exists == False
+    - name: Check that the Kubernetes apt repository list file exists
+      stat:
+        path: /etc/apt/sources.list.d/kubernetes.list
+      register: kubernetes_list_result
     - name: Add the Kubernetes apt repository
-      apt_repository:
-        repo: deb [signed-by=/usr/share/keyrings/kubernetes-apt-keyring.asc] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /
-        state: present
-        update_cache: yes
+      shell: >
+        echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg]
+        https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /' | 
+        tee /etc/apt/sources.list.d/kubernetes.list &&
+        chmod 644 /etc/apt/sources.list.d/kubernetes.list
       check_mode: no
+      when: kubernetes_list_result.stat.exists == False
     - name: Install Kubectl
       apt:
         name: kubectl
         update_cache: yes
+      check_mode: no
     - name: Confirm Kubectl is installed
       shell: kubectl version --client
       register: kubectl_result
@@ -250,15 +279,24 @@
          var: kustomize_result
 
     # Install Sublime Text
+    - name: Check that SubLime Text GPG Key exists
+      stat:
+        path: /etc/apt/keyrings/sublimehq-pub.gpg
+      register: sublime_gpg_result
     - name: Install GPG key for SubLime Text
       shell: curl -fsSL https://download.sublimetext.com/sublimehq-pub.gpg | gpg --batch --yes --dearmor -o /etc/apt/keyrings/sublimehq-pub.gpg
-      args:
-        warn: false
+      check_mode: no
+      when: sublime_gpg_result.stat.exists == False
+    - name: Check that SubLime Text apt repository list file exists
+      stat:
+        path: /etc/apt/sources.list.d/sublimetext.list
     - name: Add SubLime Text apt repository
       shell: >
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/sublimehq-pub.gpg]
+        echo "deb [arch=$(dpkg --print-architecture)
+        signed-by=/etc/apt/keyrings/sublimehq-pub.gpg]
         https://download.sublimetext.com/ apt/stable/" |
         tee /etc/apt/sources.list.d/sublimetext.list > /dev/null
+      check_mode: no
     - name: Install SubLime Text
       apt:
         name: sublime-text
@@ -275,6 +313,7 @@
       shell: >
         curl -1sLf https://packages.konghq.com/public/insomnia/setup.deb.sh |
         sudo -E distro=ubuntu codename=focal bash
+      check_mode: no
     - name: Install Insomnia
       apt:
         name: insomnia
@@ -301,20 +340,32 @@
         classic: yes
 
     # Install Microsoft Visual Studio Code
+    - name: Check that Microsoft VS Code apt signing key exists
+      stat:
+        path: /usr/share/keyrings/vscode.gpg
+      register: vscode_gpg_result
     - name: Add an apt signing key for Microsoft Visual Studio Code
       shell: curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --batch --yes --dearmor -o /usr/share/keyrings/vscode.gpg
-      args:
-        warn: false
+      check_mode: no
+      when: vscode_gpg_result.stat.exists == False
+    - name: Check that Visual Studio Code apt repository list file exists
+      stat:
+        path: /etc/apt/sources.list.d/vscode.list
+      register: vscode_list_result
     - name: Add apt repository for stable version of Visual Studio Code
       shell: >
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/vscode.gpg]
+        echo "deb [arch=$(dpkg --print-architecture)
+        signed-by=/usr/share/keyrings/vscode.gpg]
         https://packages.microsoft.com/repos/vscode stable main" |
         tee /etc/apt/sources.list.d/vscode.list > /dev/null
+      check_mode: no
+      when: vscode_list_result.stat.exists == False
     - name: Install Microsoft Visual Studio Code
       apt:
         name: code
         state: present
         update_cache: yes
+      check_mode: no
     - name: Confirm Microsoft Visual Studio Code is installed
       shell: code --version
       register: vscode_result
@@ -325,20 +376,32 @@
          var: vscode_result
 
     # Install pgAdmin4
+    - name: Check that pgAdmin4 apt signing key exists
+      stat:
+        path: /etc/apt/keyrings/packages_pgadmin_org.pub
+      register: pgadmin_gpg_result
     - name: Add an apt signing key for pgAdmin4
       shell: curl -fsSL https://www.pgadmin.org/static/packages_pgadmin_org.pub | gpg --batch --yes --dearmor -o /etc/apt/keyrings/packages_pgadmin_org.pub
-      args:
-        warn: false
+      check_mode: no
+      when: pgadmin_gpg_result.stat.exists == False
+    - name: Check that pgAdmin4 apt repository list file exists
+      stat:
+        path: /etc/apt/sources.list.d/pgAdmin.list
+      register: pgadmin_list_result
     - name: Add apt repository for pgAdmin4
       shell: >
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/packages_pgadmin_org.pub]
+        echo "deb [arch=$(dpkg --print-architecture)
+        signed-by=/etc/apt/keyrings/packages_pgadmin_org.pub]
         https://ftp.postgresql.org/pub/pgadmin/pgadmin4/apt/{{ ansible_distribution_release }} pgadmin4 main" |
         tee /etc/apt/sources.list.d/pgAdmin.list > /dev/null
+      check_mode: no
+      when: pgadmin_list_result.stat.exists == False
     - name: Install pgAdmin4
       apt:
         name: pgadmin4
         state: latest
         update_cache: yes
+      check_mode: no
    
     # Install MySQL & MySQL Workbench
     - name: Install MySQL Server
@@ -346,29 +409,42 @@
         name: mysql-server
         state: latest
         update_cache: yes
+      check_mode: no
     - name: Ensure MySQL Service is running
       systemd:
         state: started
         name: mysql 
+      check_mode: no
     - name: Install MySQL Workbench
       snap:
         name: mysql-workbench-community
         classic: yes
     
     # Install MongoDB
+    - name: Check that mongoDB apt signing key exists
+      stat:
+        path: /etc/apt/keyrings/mongodb.gpg
+      register: mongodb_gpg_result
     - name: Add an apt signing key for mongoDB
       shell: curl -fsSL https://www.mongodb.org/static/pgp/server-6.0.asc | gpg --batch --yes --dearmor -o /etc/apt/keyrings/mongodb.gpg
-      args:
-        warn: false
+      check_mode: no
+      when: mongodb_gpg_result.stat.exists == False
+    - name: Check that mongoDB apt repository list file exists
+      stat:
+        path: /etc/apt/sources.list.d/mongodb-org-6.0.list
+      register: mongodb_list_result
     - name: Add apt repository for mongoDB
       shell: >
         echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/mongodb.gpg] 
         https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" |
         tee /etc/apt/sources.list.d/mongodb-org-6.0.list > /dev/null
+      check_mode: no
+      when: mongodb_list_result.stat.exists == False
     - name: Install MongoDB
       apt:
         name: mongodb-org
         update_cache: yes      
+      check_mode: no
     - name: Confirm MongoDB is installed
       shell: mongod --version
       register: mongodb_result
@@ -395,26 +471,6 @@
         - clamav
         - clamav-daemon
         - clamtk
-    # - name: Stop the ClamAV service
-    #   service:
-    #     name: clamav-freshclam
-    #     state: stopped
-    # - name: Manually update the ClamAV signature database
-    #   shell: freshclam
-    # - name: Restart the ClamAV service
-    #   service:
-    #     name: clamav-freshclam
-    #     state: restarted
-    # - name: Download ClamTK deb package
-    #   get_url:
-    #     url: https://github.com/dave-theunsub/clamtk/releases/download/v6.14/clamtk_6.14-1_all.deb
-    #     dest: /tmp/clamtk_6.14-1_all.deb
-    #   check_mode: no
-    #   register: result
-    #   retries: 3
-    #   until: result is success
-    # - name: Install ClamTK
-    #   apt: deb=/tmp/clamtk_6.14-1_all.deb
 
     # CLEANUP
     - name: Clean up tmp directory
