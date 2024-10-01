@@ -33,6 +33,8 @@
         - vim
         - dirmngr
         - zlib1g
+        - nfs-common
+        - cifs-utils
 
     # Install OpenJDK
     - name: "Install OpenJDK {{ openjdk_version | default('11') }}"
